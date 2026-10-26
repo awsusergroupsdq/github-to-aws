@@ -1,0 +1,8 @@
+aws_region            = "us-east-1"
+namespace             = "demo"
+stage                 = "prod"
+github_repository     = "my-org/github-to-aws"
+github_allowed_branches = ["main"]
+deploy_bucket         = ""
+build_image            = "aws/codebuild/amazonlinux-x86_64-standard:6.0"
+build_compute_type     = "BUILD_GENERAL1_SMALL"
