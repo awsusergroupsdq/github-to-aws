@@ -86,6 +86,16 @@ data "aws_iam_policy_document" "codebuild_least_privilege" {
   }
 
   statement {
+    sid    = "ListCachePolicies"
+    effect = "Allow"
+    actions = [
+      "cloudfront:ListCachePolicies",
+      "cloudfront:GetCachePolicy",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
     sid       = "CloudFrontServiceLinkedRole"
     effect    = "Allow"
     actions   = ["iam:CreateServiceLinkedRole"]
