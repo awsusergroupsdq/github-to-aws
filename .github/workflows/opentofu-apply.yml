@@ -1,0 +1,44 @@
+name: OpenTofu Apply (CodeBuild)
+run-name: OpenTofu Apply via CodeBuild · ${{ github.ref_name }}
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "opentofu/app/**"
+      - ".github/workflows/opentofu-apply.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: opentofu-apply-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: "us-east-1"
+  TOFU_VERSION: 1.13.2
+
+jobs:
+  apply:
+    name: CodeBuild runner · tofu init / validate / apply
+    # CodeBuild-hosted GitHub Actions runner (self-hosted).
+    # The label must match the CodeBuild project name; the run_id/run_attempt
+    # suffix lets CodeBuild map and cancel the build with the workflow run.
+    runs-on: codebuild-ug-enmanuel-prod-app-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+
+      - name: Apply opentofu/app
+        working-directory: opentofu/app
+        run: |
+          tofu init -input=false
+          tofu validate
+          tofu apply -input=false -auto-approve
