@@ -28,6 +28,8 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          package_json_file: app/package.json
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -40,7 +42,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run unit tests
-        run: pnpm test --if-present
+        run: pnpm test
 
       - name: Lint
         run: pnpm lint

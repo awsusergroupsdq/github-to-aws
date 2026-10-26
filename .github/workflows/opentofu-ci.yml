@@ -33,13 +33,13 @@ jobs:
       - name: Setup OpenTofu
         uses: opentofu/setup-opentofu@v1
         with:
-          tofu_version: 1.9.0
+          tofu_version: 1.13.2
 
       - name: Format check
         run: tofu fmt -check -recursive
 
       - name: Init
-        run: tofu init -input=false
+        run: tofu init -backend=false -input=false
 
       - name: Validate
         run: tofu validate
