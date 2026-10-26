@@ -43,6 +43,38 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_branch || github.ref }}
 
+      - name: Wait for OpenTofu Apply to succeed on this ref
+        if: >-
+          github.event_name == 'push' &&
+          contains(join(github.event.commits.*.modified, github.event.commits.*.added), 'opentofu/')
+        run: |
+          run_id=""
+          conclusion=null
+          for i in $(seq 1 60); do
+            row=$(gh run list \
+              --workflow "OpenTofu Apply (CodeBuild)" \
+              --branch "${{ github.ref_name }}" \
+              --head-sha "${{ github.sha }}" \
+              --limit 1 \
+              --json databaseId,conclusion \
+              --jq ".[0]" || true)
+            if [ -n "$row" ]; then
+              run_id=$(echo "$row" | jq -r .databaseId)
+              conclusion=$(echo "$row" | jq -r .conclusion)
+              if [ "$conclusion" != "null" ]; then
+                break
+              fi
+            fi
+            echo "OpenTofu Apply still queued/running; waiting ($i/60)..."
+            sleep 30
+          done
+          if [ -z "$run_id" ] || [ "$conclusion" != "success" ]; then
+            echo "OpenTofu Apply did not succeed; refusing to deploy."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
