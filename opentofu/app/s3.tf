@@ -60,6 +60,10 @@ module "app_bucket" {
       noncurrent_version_expiration = {
         noncurrent_days = 7
       }
+
+      expiration = {
+        expired_object_delete_marker = true
+      }
     }
   ]
 
