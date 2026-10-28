@@ -46,10 +46,22 @@ module "app_bucket" {
   control_object_ownership = true
   object_ownership         = "BucketOwnerEnforced"
 
-  # Enable bucket versioning
+  # Keep versioning on, but expire noncurrent versions after 7 days
   versioning = {
     enabled = true
   }
+
+  lifecycle_rule = [
+    {
+      id     = "expire-noncurrent-versions"
+      status = "Enabled"
+      filter = {}
+
+      noncurrent_version_expiration = {
+        noncurrent_days = 7
+      }
+    }
+  ]
 
   # Server-side encryption (SSE-S3)
   server_side_encryption_configuration = {
