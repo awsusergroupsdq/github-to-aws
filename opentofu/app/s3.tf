@@ -1,4 +1,29 @@
 
+data "aws_iam_policy_document" "app_bucket_policy" {
+  statement {
+    sid       = "AllowCloudFrontServicePrincipal"
+    effect    = "Allow"
+    actions   = ["s3:GetObject"]
+    resources = ["${module.app_bucket.s3_bucket_arn}/*"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceArn"
+      values   = [module.cloudfront.cloudfront_distribution_arn]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "app_bucket_policy" {
+  bucket = module.app_bucket.s3_bucket_id
+  policy = data.aws_iam_policy_document.app_bucket_policy.json
+}
+
 module "app_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "5.15.4"

@@ -1,12 +1,3 @@
-data "aws_iam_policy_document" "gha_assume" {
-  statement {
-    sid       = "IdentityCheck"
-    effect    = "Allow"
-    actions   = ["sts:GetCallerIdentity"]
-    resources = ["*"]
-  }
-}
-
 data "aws_iam_policy_document" "gha_deploy" {
   count = var.deploy_bucket != "" ? 1 : 0
 
@@ -57,28 +48,35 @@ module "github_actions_role" {
   name      = "gha-oidc"
   delimiter = "-"
 
-  role_description   = "OIDC-federated role assumed by GitHub Actions from ${var.github_repository}"
-  policy_description = "Least-privilege policy allowing GitHub Actions to trigger the demo CodeBuild project${var.deploy_bucket != "" ? " and deploy the frontend to s3://${var.deploy_bucket}" : ""}"
+  role_description = "OIDC-federated role assumed by GitHub Actions from ${var.github_repository}"
+
+  policy_description = "Least-privilege policy allowing GitHub Actions to deploy the frontend"
 
   principals = {
-    Federated = [aws_iam_openid_connect_provider.github.arn]
+    Federated = [
+      aws_iam_openid_connect_provider.github.arn
+    ]
   }
+
+  assume_role_actions = [
+    "sts:AssumeRoleWithWebIdentity",
+    "sts:TagSession"
+  ]
 
   assume_role_conditions = [
     {
       test     = "StringEquals"
-      variable = "${local.github_oidc_url}:aud"
-      values   = [var.github_oidc_audience]
+      variable = "${local.github_oidc}:aud"
+      values   = ["sts.amazonaws.com"]
     },
     {
       test     = "StringLike"
-      variable = "${local.github_oidc_url}:sub"
+      variable = "${local.github_oidc}:sub"
       values   = local.github_oidc_subjects
     }
   ]
 
-  policy_documents = concat(
-    [data.aws_iam_policy_document.gha_assume.json],
-    var.deploy_bucket != "" ? [one(data.aws_iam_policy_document.gha_deploy[*].json)] : [],
-  )
+  policy_documents = var.deploy_bucket != "" ? [
+    data.aws_iam_policy_document.gha_deploy[0].json
+  ] : []
 }
