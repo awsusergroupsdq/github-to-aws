@@ -1,8 +1,3 @@
-locals {
-  app_bucket_name   = "${var.namespace}-${var.stage}-app"
-  app_bucket_prefix = "arn:aws:s3:::${local.app_bucket_name}"
-}
-
 data "aws_iam_policy_document" "codebuild_least_privilege" {
   statement {
     sid       = "CodeBuildLogs"

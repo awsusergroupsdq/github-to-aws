@@ -18,7 +18,12 @@ variable "stage" {
 
 variable "github_repository" {
   type        = string
-  description = "GitHub repository allowed to federate into IAM, e.g. 'my-org/github-to-aws'"
+  description = "GitHub repository allowed to federate into IAM, in 'owner/repo' form, e.g. 'my-org/github-to-aws'. Trust is pinned to github_allowed_branches and covers both the legacy sub format and the new immutable subject claim format (owner@id/repo@id) used by repositories created after July 15, 2026 or opted in to immutable subject claims."
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9-]+/[A-Za-z0-9_.-]+$", var.github_repository))
+    error_message = "github_repository must be in 'owner/repo' form, e.g. 'my-org/github-to-aws'."
+  }
 }
 
 variable "github_allowed_branches" {
@@ -47,7 +52,7 @@ variable "github_pat" {
 
 variable "deploy_bucket" {
   type        = string
-  default     = ""
+  default     = "ug-enmanuel-prod-app"
   description = "Optional name of the S3 bucket (from opentofu/app output bucket_name) that GitHub Actions may sync frontend artifacts into; empty disables the deploy grants"
 }
 
