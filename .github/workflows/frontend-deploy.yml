@@ -111,6 +111,7 @@ jobs:
           tofu init -input=false
           echo "DEPLOY_BUCKET=$(tofu output -raw bucket_name)" >> "$GITHUB_ENV"
           echo "CLOUDFRONT_DISTRIBUTION_ID=$(tofu output -raw cloudfront_distribution_id)" >> "$GITHUB_ENV"
+          echo "CLOUDFRONT_URL=$(tofu output -raw website_url)" >> "$GITHUB_ENV"
 
       - name: Sync dist/ to S3 bucket
         run: |
@@ -124,3 +125,13 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
             --paths "/*"
+
+      - name: Show CloudFront URL
+        if: ${{ env.CLOUDFRONT_URL != '' }}
+        run: |
+          echo "The app is available at: $CLOUDFRONT_URL"
+          {
+            echo "### Deployment complete"
+            echo ""
+            echo "CloudFront URL: $CLOUDFRONT_URL"
+          } >> "$GITHUB_STEP_SUMMARY"
