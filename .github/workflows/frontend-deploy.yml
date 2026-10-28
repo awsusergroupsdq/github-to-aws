@@ -115,9 +115,7 @@ jobs:
 
       - name: Sync dist/ to S3 bucket
         run: |
-          aws s3 sync dist/ "s3://$DEPLOY_BUCKET" --delete \
-            --no-progress
-          aws s3 cp index.html "s3://$DEPLOY_BUCKET/index.html" --no-progress
+          aws s3 sync dist/ "s3://$DEPLOY_BUCKET" --delete --no-progress
 
       - name: Invalidate CloudFront cache
         if: ${{ env.CLOUDFRONT_DISTRIBUTION_ID != '' }}
