@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const LINES = [
   [0, 1, 2],
@@ -11,10 +11,65 @@ const LINES = [
   [2, 4, 6],
 ]
 
+function createAudioContext() {
+  const Ctx = window.AudioContext || window.webkitAudioContext
+  return Ctx ? new Ctx() : null
+}
+
+function playNote(ctx, frequency, startAt, duration, type = 'triangle') {
+  const osc = ctx.createOscillator()
+  const gain = ctx.createGain()
+  osc.type = type
+  osc.frequency.value = frequency
+  gain.gain.setValueAtTime(0.15, ctx.currentTime + startAt)
+  gain.gain.exponentialRampToValueAtTime(
+    0.001,
+    ctx.currentTime + startAt + duration,
+  )
+  osc.connect(gain)
+  gain.connect(ctx.destination)
+  osc.start(ctx.currentTime + startAt)
+  osc.stop(ctx.currentTime + startAt + duration)
+  return osc
+}
+
+function playMoveSound(player) {
+  const ctx = createAudioContext()
+  if (!ctx) return
+  playNote(ctx, player === 'X' ? 440 : 330, 0, 0.15).onended = () => ctx.close()
+}
+
+function playWinSound() {
+  const ctx = createAudioContext()
+  if (!ctx) return
+  const notes = [
+    [523.25, 0],
+    [659.25, 0.15],
+    [783.99, 0.3],
+    [1046.5, 0.45],
+  ]
+  const oscs = notes.map(([freq, start]) =>
+    playNote(ctx, freq, start, 0.25, 'square'),
+  )
+  oscs[oscs.length - 1].onended = () => ctx.close()
+}
+
+function playDrawSound() {
+  const ctx = createAudioContext()
+  if (!ctx) return
+  const notes = [
+    [392, 0],
+    [329.63, 0.2],
+    [261.63, 0.4],
+  ]
+  const oscs = notes.map(([freq, start]) => playNote(ctx, freq, start, 0.3))
+  oscs[oscs.length - 1].onended = () => ctx.close()
+}
+
 function calculateWinner(squares) {
   for (const [a, b, c] of LINES) {
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a]
+      return { player: squares[a], line: [a, b, c] }
     }
   }
   return null
@@ -47,14 +102,16 @@ function Sprig() {
   )
 }
 
-function Board({ squares, onSquareClick }) {
+function Board({ squares, winningLine, onSquareClick }) {
   return (
     <div className="board">
       {squares.map((value, i) => (
         <button
           key={i}
           type="button"
-          className={`square${value ? ` square--${value.toLowerCase()}` : ''}`}
+          className={`square${value ? ` square--${value.toLowerCase()}` : ''}${
+            winningLine?.includes(i) ? ' square--win' : ''
+          }`}
           onClick={() => onSquareClick(i)}
           disabled={value !== null}
           aria-label={`Square ${i + 1}${value ? `, ${value}` : ''}`}
@@ -71,14 +128,23 @@ function App() {
   const [currentMove, setCurrentMove] = useState(0)
 
   const squares = history[currentMove]
-  const winner = calculateWinner(squares)
+  const result = calculateWinner(squares)
+  const winner = result?.player
+  const winningLine = result?.line
   const isDraw = !winner && squares.every((value) => value !== null)
   const xIsNext = currentMove % 2 === 0
 
+  useEffect(() => {
+    if (winner) playWinSound()
+    else if (isDraw) playDrawSound()
+  }, [winner, isDraw])
+
   function handleSquareClick(i) {
     if (winner || squares[i]) return
+    const player = xIsNext ? 'X' : 'O'
     const next = squares.slice()
-    next[i] = xIsNext ? 'X' : 'O'
+    next[i] = player
+    playMoveSound(player)
     const nextHistory = history.slice(0, currentMove + 1).concat([next])
     setHistory(nextHistory)
     setCurrentMove(nextHistory.length - 1)
@@ -104,7 +170,11 @@ function App() {
       </header>
       <div className="game__park">
         <section className="panel" aria-label="Game board">
-          <Board squares={squares} onSquareClick={handleSquareClick} />
+          <Board
+            squares={squares}
+            winningLine={winningLine}
+            onSquareClick={handleSquareClick}
+          />
         </section>
       </div>
       <button type="button" className="restart" onClick={restart}>
