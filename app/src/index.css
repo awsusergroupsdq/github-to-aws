@@ -158,6 +158,24 @@ body {
   color: var(--dp-color-accent);
 }
 
+.square--win {
+  background: var(--dp-color-warm-field);
+  border-color: var(--dp-color-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dp-color-accent) 35%, transparent);
+  animation: win-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes win-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--dp-color-accent) 35%, transparent);
+  }
+
+  50% {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--dp-color-accent) 20%, transparent);
+  }
+}
+
 .square:focus-visible,
 .restart:focus-visible {
   outline: 2px solid var(--dp-color-accent);
@@ -206,6 +224,10 @@ body {
   .square,
   .restart {
     transition: none;
+  }
+
+  .square--win {
+    animation: none;
   }
 
   .square:hover:not(:disabled),
